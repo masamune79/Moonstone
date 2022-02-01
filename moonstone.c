@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#include <time.h>
 
 // char = 8, wchar_t = 16
 #define CHAR_SET 16
@@ -33,13 +34,17 @@ uint32_t xorshift32(void)
     return state;
 }
 
-void moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint32_t* last_len)
+bool moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint32_t* last_len)
 {
     size_t len_dest = __tcslen(dest);
     size_t len_key = __tcslen(key);
     
-    seed((len_dest <= 4096) ? (len_dest * len_key) : (len_dest + len_key));
-    uint32_t randnum = xorshift32() % len_key;
+    if (len_dest == 0 || len_key == 0) {return 0;}
+    
+    seed((uint32_t)time(0));
+    uint32_t temp_randnum = xorshift32();
+    if (temp_randnum == 0) {temp_randnum = len_dest * len_key;}
+    uint32_t randnum = temp_randnum % len_key;
     
     uint32_t key_index = randnum; 
     for (uint32_t i = 0; i < len_dest; i++)
@@ -51,17 +56,20 @@ void moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint3
     
     *last_randnum = randnum;
     *last_len = len_dest;
+    return 1;
 }
 
-void moonstone_decipher(__TCHAR* dest, __TCHAR* key, uint32_t last_randnum, uint32_t last_len)
+bool moonstone_decipher(__TCHAR* dest, __TCHAR* key, uint32_t last_randnum, uint32_t last_len)
 {
+    if (last_randnum == 0 || last_len == 0) {return 0;}
     uint32_t key_index = last_randnum;
     for (uint32_t i = 0; i < last_len; i++)
     {
         key_index %= (last_randnum ^ i);
         key_index |= (last_len ^ i);
         dest[i] ^= key[((key_index ^ i) & last_len) % last_randnum];
-    }   
+    }
+    return 1;
 }
 
 int main(int argc, char *argv[])
