@@ -45,6 +45,7 @@ bool moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint3
     uint32_t temp_randnum = xorshift32();
     if (temp_randnum == 0) {temp_randnum = len_dest * len_key;}
     uint32_t randnum = temp_randnum % len_key;
+    if (randnum == 0) {randnum++;}
     
     uint32_t key_index = randnum; 
     for (uint32_t i = 0; i < len_dest; i++)
