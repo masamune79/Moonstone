@@ -8,50 +8,54 @@
 #define CHAR_SET 16
 
 #if CHAR_SET == 8
-    typedef char __TCHAR;
-    #define __TEXT(chr) chr
-    #define __tcslen strlen
-    #define _FNPUTS printf
+    typedef char tchr;
+    #define _t(chr) chr
+    #define _tcslen strlen
+    #define _tprint printf
 #elif CHAR_SET == 16
-    typedef wchar_t __TCHAR;
-    #define __TEXT(chr) L##chr
-    #define __tcslen wcslen
-    #define _FNPUTS wprintf
+    typedef wchar_t tchr;
+    #define _t(chr) L##chr
+    #define _tcslen wcslen
+    #define _tprint wprintf
 #endif
 
-static uint32_t state = 0;
+uint64_t state = 0;
 
-void seed(uint32_t ss)
+void seed(uint64_t _seed) { state = _seed; }
+
+inline uint64_t sm64()
 {
-    state = ss;
+    uint64_t z = (state += 0x9E3779B97F4A7C15);
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EB;
+    return z ^ (z >> 31);
 }
 
-uint32_t xorshift32(void)
+inline uint64_t mix_sm64()
 {
-    state ^= state << 13;
-    state ^= state >> 17;
-    state ^= state << 5;
-    return state;
+    time_t cur_time = time(0);
+    seed((uint64_t)cur_time);
+    uint64_t mix1 = sm64();
+    seed((uint64_t)(time(0) & cur_time));
+    uint64_t mix2 = sm64();
+    return (mix1 ^ (cur_time % 10)) | mix2;
 }
 
-bool moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint32_t* last_len)
+bool moonstone_cipher(tchr* dest, tchr* key, uint64_t* last_randnum, uint64_t* last_len)
 {
-    size_t len_dest = __tcslen(dest);
-    size_t len_key = __tcslen(key);
+    uint64_t len_dest = _tcslen(dest);
+    uint64_t len_key = _tcslen(key);
     
     if (len_dest == 0 || len_key == 0) {return 0;}
     
-    seed((uint32_t)time(0));
-    uint32_t temp_randnum = xorshift32();
-    if (temp_randnum == 0) {temp_randnum = len_dest * len_key;}
-    uint32_t randnum = temp_randnum % len_key;
+    uint64_t randnum = mix_sm64() % len_key;
     if (randnum == 0) {randnum++;}
     
-    uint32_t key_index = randnum; 
-    for (uint32_t i = 0; i < len_dest; i++)
+    uint64_t key_index = randnum;
+    for (uint64_t i = 0; i < len_dest; i++)
     {
-        key_index %= (randnum ^ i);
         key_index |= (len_dest ^ i);
+        key_index %= (randnum ^ i);
         dest[i] ^= key[((key_index ^ i) & len_dest) % randnum];
     }
     
@@ -60,14 +64,14 @@ bool moonstone_cipher(__TCHAR* dest, __TCHAR* key, uint32_t* last_randnum, uint3
     return 1;
 }
 
-bool moonstone_decipher(__TCHAR* dest, __TCHAR* key, uint32_t last_randnum, uint32_t last_len)
+bool moonstone_decipher(tchr* dest, tchr* key, uint64_t last_randnum, uint64_t last_len)
 {
     if (last_randnum == 0 || last_len == 0) {return 0;}
-    uint32_t key_index = last_randnum;
-    for (uint32_t i = 0; i < last_len; i++)
+    uint64_t key_index = last_randnum;
+    for (uint64_t i = 0; i < last_len; i++)
     {
-        key_index %= (last_randnum ^ i);
         key_index |= (last_len ^ i);
+        key_index %= (last_randnum ^ i);
         dest[i] ^= key[((key_index ^ i) & last_len) % last_randnum];
     }
     return 1;
@@ -76,21 +80,21 @@ bool moonstone_decipher(__TCHAR* dest, __TCHAR* key, uint32_t last_randnum, uint
 int main(int argc, char *argv[])
 {
     // example data
-    __TCHAR data[512] = __TEXT("The Kuril–Kamchatka Trench or Kuril Trench is an oceanic trench in the northwest Pacific Ocean. It lies off the southeast coast of Kamchatka and parallels the Kuril Island chain to meet the Japan Trench east of Hokkaido. It extends from a triple junction with the Ulakhan Fault and the Aleutian Trench near the Commander Islands, Russia, in the northeast, to the intersection with the Japan Trench in the southwest.");
+    tchr data[512] = _t("NGC 1300 is a barred spiral galaxy located about 61 million light-years away in the constellation Eridanus. The galaxy is about 110,000 light-years across (about the half size of the Milky Way at 200,000). It is a member of the Eridanus Cluster, a cluster of 200 galaxies. It was discovered by John Herschel in 1835.");
     
-    // example key Pf5xjPA4lj28zZ27PXCDcwy3VKbhwRsJ
-    __TCHAR key[33] = __TEXT("Pf5xjPA4lj28zZ27PXCDcwy3VKbhwRsJ");
+    // example key
+    tchr key[65] = _t("xq6FTYpgsEvwfUWJIO9tXQm0pUsNVR5TjL5Jmq7ApP2U3aYlh0ntgGKUv347SzkH");
     
     // please keep the last random number and lenght of data, it used when decryption process!
-    uint32_t last_num = 0;
-    uint32_t last_len = 0;
-	
+    uint64_t last_num = 0;
+    uint64_t last_len = 0;
+    	
     // warning!: print the encrypted char sometimes can corrupt std out buffer, which can corrupt decrypted char too
     moonstone_cipher(data, key, &last_num, &last_len);
-    _FNPUTS(__TEXT("Encrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
-    
+   _tprint(_t("Encrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
+   
     moonstone_decipher(data, key, last_num, last_len);
-    _FNPUTS(__TEXT("\r\nDecrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
+    _tprint(_t("\r\nDecrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
     
     return 1;
 }
