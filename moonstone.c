@@ -44,22 +44,22 @@ inline uint64_t mix_sm64()
 bool moonstone_cipher(tchr* dest, tchr* key, uint64_t* last_randnum, uint64_t* last_len)
 {
     uint64_t len_dest = _tcslen(dest);
-    uint64_t len_key = _tcslen(key);
-    
+    uint64_t len_key = _tcslen(key); 
     if (len_dest == 0 || len_key == 0) {return 0;}
     
-    uint64_t randnum = mix_sm64() % len_key;
+    uint64_t temp_randnum = mix_sm64();
+    uint64_t randnum = temp_randnum % len_key;
     if (randnum == 0) {randnum++;}
     
     uint64_t key_index = randnum;
     for (uint64_t i = 0; i < len_dest; i++)
     {
-        key_index |= (len_dest ^ i);
         key_index %= (randnum ^ i);
+        key_index |= (len_dest ^ i);
         dest[i] ^= key[((key_index ^ i) & len_dest) % randnum];
     }
     
-    *last_randnum = randnum;
+    *last_randnum = temp_randnum;
     *last_len = len_dest;
     return 1;
 }
@@ -67,12 +67,16 @@ bool moonstone_cipher(tchr* dest, tchr* key, uint64_t* last_randnum, uint64_t* l
 bool moonstone_decipher(tchr* dest, tchr* key, uint64_t last_randnum, uint64_t last_len)
 {
     if (last_randnum == 0 || last_len == 0) {return 0;}
+    uint64_t len_key = _tcslen(key);
+    uint64_t randnum = last_randnum % len_key;
+    if (randnum == 0) {randnum++;}
+    
     uint64_t key_index = last_randnum;
     for (uint64_t i = 0; i < last_len; i++)
     {
+        key_index %= (randnum ^ i);
         key_index |= (last_len ^ i);
-        key_index %= (last_randnum ^ i);
-        dest[i] ^= key[((key_index ^ i) & last_len) % last_randnum];
+        dest[i] ^= key[((key_index ^ i) & last_len) % randnum];
     }
     return 1;
 }
@@ -91,7 +95,7 @@ int main(int argc, char *argv[])
     	
     // warning!: print the encrypted char sometimes can corrupt std out buffer, which can corrupt decrypted char too
     moonstone_cipher(data, key, &last_num, &last_len);
-   _tprint(_t("Encrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
+   _tprint(_t("Encrypted = %ls\r\n" /* change this to %s when CHAR_SET is 8 */), data);
    
     moonstone_decipher(data, key, last_num, last_len);
     _tprint(_t("\r\nDecrypted = %ls" /* change this to %s when CHAR_SET is 8 */), data);
