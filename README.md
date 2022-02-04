@@ -9,8 +9,8 @@ Still recommended to use another cipher such as AES, RSA etc. <br>
 moonstone_cipher(tchr* dest, tchr* key, uint64_t* last_randnum, uint64_t* last_len)
 dest = point to array contain a plain text.
 key = point to array contain a key.
-last_randnum = point to uint32_t variable that will receive last number.
-last_len = point to uint32_t variable that will receive length of data.
+last_randnum = point to uint64_t variable that will receive last number.
+last_len = point to uint64_t variable that will receive length of data.
 ```
 
 **Decipher** <br>
@@ -18,8 +18,8 @@ last_len = point to uint32_t variable that will receive length of data.
 moonstone_decipher(tchr* dest, tchr* key, uint64_t last_randnum, uint64_t last_len)
 dest = point to array contain a cipher text.
 key = point to array contain a key.
-last_randnum = point to uint32_t variable that will used in decipher process.
-last_len = point to uint32_t variable that will used in decipher process.
+last_randnum = point to uint64_t variable that will used in decipher process.
+last_len = point to uint64_t variable that will used in decipher process.
 ```
 
 # Result
