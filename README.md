@@ -24,4 +24,4 @@ last_len = point to uint64_t variable that will used in decipher process.
 
 # Result
 The result of ciphered text are different each sequence. <br>
-![result](https://cdn.upload.systems/uploads/dhhyFMEI.gif)
+![result](https://cdn.upload.systems/uploads/n65nb4RL.gif)
