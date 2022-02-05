@@ -16,10 +16,10 @@ int main()
       
     // warning!: print the encrypted char sometimes can corrupt std out buffer, which can corrupt decrypted char too
     moonstone_cipher(data, key, &last_num, &last_len);
-   _tprint(_t("Encrypted =" STR "\r\n"/* change this to %s when CHAR_SET is 8 */), data);
+   _tprint(_t("Encrypted =" STR "\r\n"), data);
    
     moonstone_decipher(data, key, last_num, last_len);
-    _tprint(_t("Decrypted =" STR "\r\n" /* change this to %s when CHAR_SET is 8 */), data);
+    _tprint(_t("Decrypted =" STR "\r\n"), data);
     
     return 1;
 }
